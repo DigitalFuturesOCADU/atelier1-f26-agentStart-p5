@@ -82,10 +82,10 @@ Anyone with the address can open it while it runs. For anything you hand in or s
 
 ## Already have a repo?
 
-If you made your repo from the simple starter, you can add these pieces to it. Commit first. Then open your project in OpenCode, choose **Build**, and paste:
+If you made your repo from the simple starter, you can add these pieces to it. The prompt also brings your skills up to date. Commit first. Then open your project in OpenCode, choose **Build**, and paste:
 
 ```
-Copy these from the template at github.com/DigitalFuturesOCADU/atelier1-f26-agentStart-p5 into this project: AGENTS.md, plan.md, the references folder, package.json, and the scripts folder. If .agents/skills is missing here, copy that too. If this project already has a plan.md, keep mine and save the template's as plan-template.md. If any other file already exists here, do not replace it. Tell me instead. Do not change any of my other files, and do not commit. Then list what you added.
+Copy these from the template at github.com/DigitalFuturesOCADU/atelier1-f26-agentStart-p5 into this project: AGENTS.md, plan.md, the references folder, package.json, and the scripts folder. Replace the .agents/skills folder with the template's copy, so the skills are up to date. If this project already has a plan.md, keep mine and save the template's as plan-template.md. If any other file already exists here, do not replace it. Tell me instead. Do not change any of my other files, and do not commit. Then list what you added.
 ```
 
 Look at what changed in the Review panel or in Source Control. Then commit. If you already had a plan, copy the headings you want from `plan-template.md` into it.
@@ -107,4 +107,4 @@ The `.agents/skills` folder holds two skills. A skill is a set of notes a coding
 - `p5-phone` explains how p5-phone reaches the phone's sensors and asks for permissions.
 - `p5js-2x` keeps the agent writing p5.js 2.x code, not the older 1.x code most models learned from.
 
-`AGENTS.md` asks the agent to load both before it starts. They come from the [p5-phone repository](https://github.com/npuckett/p5-phone). Leave them as they are for now. You can add your own skills next to them later.
+`AGENTS.md` asks the agent to load both before it starts. They come from the [p5-phone repository](https://github.com/npuckett/p5-phone). Leave them as they are for now. When they are fixed there, the prompt under **Already have a repo?** copies the new ones into your project. You can add your own skills next to them later.
