@@ -67,7 +67,7 @@ In VS Code's Chat the same steps work. Choose **Plan**, then **Agent**, and type
 
 `npm run phone` opens a temporary HTTPS address for Live Server and prints a QR code. Tilt, shake and sound work on the phone, and every save shows up when you reload.
 
-It needs two installs, once:
+It needs two installs, once. There is nothing to install with npm.
 
 - **Node.js**, the LTS version from nodejs.org.
 - **cloudflared**. Mac: `brew install cloudflared`. Windows: `winget install --id Cloudflare.cloudflared`.
@@ -85,10 +85,10 @@ Anyone with the address can open it while it runs. For anything you hand in or s
 If you made your repo from the simple starter, you can add these pieces to it. Commit first. Then open your project in OpenCode, choose **Build**, and paste:
 
 ```
-Copy these from the template at github.com/DigitalFuturesOCADU/atelier1-f26-agentStart-p5 into this project: AGENTS.md, plan.md, the references folder, package.json, and the scripts folder. If .agents/skills is missing here, copy that too. If a file already exists here, do not replace it. Tell me instead. Do not change any of my other files, and do not commit. Then list what you added.
+Copy these from the template at github.com/DigitalFuturesOCADU/atelier1-f26-agentStart-p5 into this project: AGENTS.md, plan.md, the references folder, package.json, and the scripts folder. If .agents/skills is missing here, copy that too. If this project already has a plan.md, keep mine and save the template's as plan-template.md. If any other file already exists here, do not replace it. Tell me instead. Do not change any of my other files, and do not commit. Then list what you added.
 ```
 
-Look at what changed in the Review panel or in Source Control. Then commit.
+Look at what changed in the Review panel or in Source Control. Then commit. If you already had a plan, copy the headings you want from `plan-template.md` into it.
 
 ## If your page does not publish
 
