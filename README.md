@@ -40,7 +40,49 @@ https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/
 
 GitHub does not copy the Pages setting from the template, so each new copy needs step 2 once. Until then, your address shows a 404. You do not need GitHub Actions, and you do not need the **Configure** button.
 
-## Start a plan
+## Plan it in a chat
+
+A chat is a good place to make your plan: a strong free model (Claude's free plan has Sonnet 5.5), your voice, your images, and as long as you need. It cannot see this repo, so the prompt gives it the two skills and the plan template as links. What comes back here is `plan.md` and your images.
+
+1. Open a new chat. Attach your images, if you have any. Send this, with your own idea on the last line but one:
+
+```
+I'm designing a phone sketch for a design class. The goal of this chat is one file, plan.md: a detailed plan that a coding agent in my repo will build from, one small step at a time, in p5.js 2 with the p5-phone library. I write the parts that describe my idea. You ask me questions, tell me what a phone can and cannot do, and at the end write the build steps for the agent. No code.
+
+Read these first, so you know what the phone and the libraries can do, and what my plan needs:
+- p5-phone skill: https://raw.githubusercontent.com/npuckett/p5-phone/main/SKILL.md
+- p5.js 2 skill: https://raw.githubusercontent.com/DigitalFuturesOCADU/atelier1-f26-agentStart-p5/main/.agents/skills/p5js-2x/SKILL.md
+- My plan template: https://raw.githubusercontent.com/DigitalFuturesOCADU/atelier1-f26-agentStart-p5/main/plan.md
+
+My idea: [your idea, in one or two sentences]
+
+Ask me questions, one at a time, until everything above Steps in the template is clear. Tell me when something I want is hard or impossible on a phone. Do not write my answers for me.
+```
+
+   With images, add before your idea: `I'm attaching [file]. It is a layout: match where things sit and their size. [file] is inspiration: take the feel only. Use these file names in the References table. They will be in the references folder in my repo.`
+
+2. Answer its questions in your own words. Then write everything above **Steps** yourself and send it with this:
+
+```
+Here is my draft of everything above Steps, in my own words. Check it: what is missing, unclear, or not possible on a phone? Do not rewrite it. Tell me what to change.
+
+Then write the Steps for the coding agent. For each step:
+- what to build, in a sentence or two
+- which p5-phone and p5.js functions to use, from the skills
+- what I should see on my laptop, and on my phone
+- any new numbers, named at the top of sketch.js so I can tune them
+
+Keep each step small enough to check on my phone in a few minutes. Put the riskiest phone parts (permissions, sensors, keeping the screen on) early. Then list what you had to assume. No code.
+```
+
+3. Fix what it points out. Rewrite anything it drafted above Steps. Save it as `plan.md` in this repo, put your images in `references/` with the same names, and commit. Keep the chat's link.
+4. In OpenCode, choose **Plan** and send: `@plan.md Check the Steps against this project and its skills. What is wrong, missing or too big? Do not change any files.`
+5. Switch to **Build** and send: `Make those changes to the Steps in plan.md. Change nothing else.` Commit.
+6. Send `Do step 1.` Check it on your phone. When you change the plan later, commit, then tell Build: `I changed [what] in plan.md. Update step 1 to match.`
+
+If the chat cannot open the links, save the three files and attach them instead.
+
+## Or plan in your repo
 
 1. Open `plan.md`. Fill in everything above **Steps** yourself. Rough notes are fine.
 2. Put any images you mention in `references/`, and list them in the References table.
