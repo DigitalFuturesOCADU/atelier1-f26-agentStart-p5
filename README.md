@@ -29,7 +29,7 @@ The short version:
 
 1. Click **Use this template**, then **Create a new repository**. Keep it **Public**.
 2. In your new repository, open **Settings**, then **Pages**. Under **Build and deployment**, leave **Source** on **Deploy from a branch**. Set **Branch** to **main** and the folder to **/ (root)**, then click **Save**. After that, every push publishes your sketch.
-3. In VS Code, choose **Clone Git Repository**, then **Clone from GitHub**, and pick your new repository.
+3. Clone it to your laptop, into `Documents/GitHub`. With GitHub Desktop: on your repository's page, click **Code**, then **Open with GitHub Desktop**, then **Clone**. Or in VS Code: choose **Clone Git Repository**, then **Clone from GitHub**, and pick your new repository.
 4. Open `index.html` and click **Go Live** to see the sketch on your laptop.
 5. Change `sketch.js`. In Source Control, write a message, click **Commit**, then **Sync Changes**.
 6. Wait about a minute. Open this address on your phone:
@@ -61,24 +61,23 @@ Ask me questions, one at a time, until everything above Steps in the template is
 
    With images, add before your idea: `I'm attaching [file]. It is a layout: match where things sit and their size. [file] is inspiration: take the feel only. Use these file names in the References table. They will be in the references folder in my repo.`
 
-2. Answer its questions in your own words. Then write everything above **Steps** yourself and send it with this:
+2. Answer its questions in your own words. When it has no more questions, it may offer `plan.md` as a file. If it does not, send this:
 
 ```
-Here is my draft of everything above Steps, in my own words. Check it: what is missing, unclear, or not possible on a phone? Do not rewrite it. Tell me what to change.
-
-Then write the Steps for the coding agent. For each step:
-- what to build, in a sentence or two
-- which p5-phone and p5.js functions to use, from the skills
-- what I should see on my laptop, and on my phone
-- any new numbers, named at the top of sketch.js so I can tune them
-
-Keep each step small enough to check on my phone in a few minutes. Put the riskiest phone parts (permissions, sensors, keeping the screen on) early. Then list what you had to assume. No code.
+Now write my plan.md as a file I can download.
+- Use my template's headings, in the same order.
+- Above Steps, use my answers from this chat, in my own words. Do not rewrite them or add your own. If something is missing, leave its [brackets] for me to fill in.
+- Then write the Steps for the coding agent. For each step: what to build, in a sentence or two; which p5-phone and p5.js functions to use, from the skills; what I should see on my laptop, and on my phone; any new numbers, named at the top of sketch.js so I can tune them.
+- Keep each step small enough to check on my phone in a few minutes. Put the riskiest phone parts (permissions, sensors, keeping the screen on) early.
+- After the Steps, list what you had to assume.
+- Leave Changes empty. No code.
 ```
 
-3. Fix what it points out. Rewrite anything it drafted above Steps. Save it as `plan.md` in this repo, put your images in `references/` with the same names, and commit. Keep the chat's link.
-4. In OpenCode, choose **Plan** and send: `@plan.md Check the Steps against this project and its skills. What is wrong, missing or too big? Do not change any files.`
-5. Switch to **Build** and send: `Make those changes to the Steps in plan.md. Change nothing else.` Commit.
-6. Send `Do step 1.` Check it on your phone. When you change the plan later, commit, then tell Build: `I changed [what] in plan.md. Update step 1 to match.`
+3. Download `plan.md` and put it at the top of this repo, next to `sketch.js`, in place of the template's. If the chat only shows text, copy it into `plan.md` instead. Put your images in `references/` with the same names.
+4. Read everything above **Steps**. It should be your answers, in your own words: rewrite any line that is not, and fill in any `[brackets]` it left. The Steps can come from the chat. Commit, and keep the chat's link.
+5. In OpenCode, choose **Plan** and send: `@plan.md Check the Steps against this project and its skills. What is wrong, missing or too big? Do not change any files.`
+6. Switch to **Build** and send: `Make those changes to the Steps in plan.md. Change nothing else.` Commit.
+7. Send `Do step 1.` Check it on your phone. When you change the plan later, commit, then tell Build: `I changed [what] in plan.md. Update step 1 to match.`
 
 If the chat cannot open the links, save the three files and attach them instead.
 
