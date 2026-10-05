@@ -6,7 +6,7 @@ argument-hint: "Describe the p5-phone example or API question"
 
 # p5-phone: Mobile Hardware for p5.js
 
-p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.15.0**.
+p5-phone is a single-file helper library that gives p5.js sketches access to mobile phone hardware — motion sensors, microphone, sound, speech, camera (with ML5 coordinate mapping), vibration, torch/flashlight, NFC, GPS/geolocation, Bluetooth LE, and multi-user Share rooms — plus mobile gesture locking, browser-permission activation UI, and an on-screen debug console. Current version: **1.15.2**.
 
 It works in **both p5.js 1.x and 2.x** (auto-detected at runtime). Every public function is attached to `window` (global mode) and mirrored on `p5.prototype` (instance mode), so you call them as bare globals like `lockGestures()` and `enableSensorTap()`.
 
@@ -34,7 +34,7 @@ HTML baseline (p5.js 2-compatible):
   </style>
   <script src="https://cdn.jsdelivr.net/npm/p5@2.2.3/lib/p5.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.js-compatibility@0.2.0/src/preload.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.0/dist/p5-phone.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5-phone@1.15.2/dist/p5-phone.min.js"></script>
 </head>
 <body>
   <script src="sketch.js"></script>
@@ -54,6 +54,7 @@ Minimal sketch (`sketch.js`):
 function setup() {
   createCanvas(windowWidth, windowHeight);
   lockGestures();
+  angleMode(DEGREES); // rotationX/Y/Z in degrees. p5 uses radians unless told
   enableSensorTap('Tap to enable motion sensors');
 }
 
@@ -91,11 +92,11 @@ The most common failure mode is a model **hand-rolling hardware plumbing** (a ra
 
 | p5-phone concern | Use these p5.js built-ins (not custom code) | Notes |
 | --- | --- | --- |
-| Device orientation | `rotationX`, `rotationY`, `rotationZ` (+ `pRotationX/Y/Z`) | p5 globals; p5-phone only gates them via `sensorsEnabled` |
+| Device orientation | `rotationX`, `rotationY`, `rotationZ` (+ `pRotationX/Y/Z`) | p5 globals in the current `angleMode()`: radians unless the sketch calls `angleMode(DEGREES)`. p5-phone only gates them via `sensorsEnabled` |
 | Acceleration | `accelerationX/Y/Z`, `pAccelerationX/Y/Z` | p5 globals |
 | How fast it is turning | `rotationX - pRotationX` (and Y, Z) each frame, or `deviceTurned()` with `turnAxis` | p5.js has **no** rotation-rate globals (see the trap below) |
 | Motion events / thresholds | `deviceMoved()`, `deviceShaken()`, `setMoveThreshold()`, `setShakeThreshold()`, `deviceOrientation` | define the callbacks as globals |
-| Touch / pointer input | `mousePressed()`, `mouseDragged()`, `mouseReleased()`, `mouseX`, `mouseY`, `touches[]` | p5.js 2 unifies mouse+touch under the pointer model; use `touches[]` for multitouch. Do **not** add your own `addEventListener('touchstart', …)` |
+| Touch / pointer input | `mousePressed()`, `mouseDragged()`, `mouseReleased()`, `mouseX`, `mouseY`, `touches[]` | p5.js 2 unifies mouse+touch under the pointer model; use `touches[]` for multitouch, and `touches.length > 0` for "a finger is down" (`mouseIsPressed` turns false when any one finger lifts). Do **not** add your own `addEventListener('touchstart', …)` |
 | Drawing the camera feed | `image(cam, x, y, w, h)` + `cam.mapKeypoint()/mapBox()` | `PhoneCamera` integrates with p5's `image()`; map ML5 results with its helpers, not manual video compositing |
 | Microphone level / analysis | `p5.AudioIn`, `p5.Amplitude`, `p5.FFT` (p5.sound) | not a raw Web Audio graph |
 | Generated sound | `p5.Oscillator`, `p5.Envelope` (p5.sound) | prefer over `loadSound()` for portability |
@@ -213,7 +214,18 @@ After `window.sensorsEnabled` is true, read p5.js built-ins:
 - Thresholds: `setMoveThreshold(value)`, `setShakeThreshold(value)`
 - Orientation state: `deviceOrientation`
 
+`rotationX/Y/Z` follow `angleMode()`, so they are radians unless the sketch calls `angleMode(DEGREES)`. Call it in `setup()` of every tilt sketch that maps tilt to pixels or compares it with degree thresholds: in radians, `rotationY * 3` moves a few pixels. In degrees, `rotationX` runs from -180 to 180, `rotationY` from -90 to 90, and `rotationZ` from 0 to 360.
+
+On a computer with no tilt sensor, `sensorsEnabled` still turns true after the tap, and `rotationX/Y/Z` stay 0. The browser sends one empty reading there (every angle `null`); p5-phone drops it before p5 sees it.
+
 iOS requires the sensor permission to be requested from a tap/click. Never auto-request motion permission on page load.
+
+## Touch
+
+Touch needs no permission. Use p5.js built-ins: `mousePressed()`, `mouseDragged()`, `mouseReleased()`, `mouseX` and `mouseY` for one finger, and `touches[]` (each with `x`, `y` and `id`) for several.
+
+- `mouseIsPressed` turns false as soon as any one finger lifts, even with other fingers still down. In a multi-finger sketch, test `touches.length > 0` for "a finger is down".
+- When the phone cancels a touch (a system swipe, too many fingers), the touch leaves `touches[]` and `mouseIsPressed` turns false, as if the finger lifted. With p5.js 2.0 to 2.3.0 (2.2.3 included), p5-phone does this and also runs `mouseReleased(e)`, with `e.type === 'pointercancel'`; on their own those versions keep the touch in `touches[]` until the page reloads. p5.js 2.3.1 and later do it themselves, without calling `mouseReleased()`.
 
 ## Microphone and sound
 
@@ -488,10 +500,11 @@ function mousePressed() {
 
 ## Torch / flashlight
 
-Android-Chrome-oriented, requires HTTPS, works through a rear-camera stream. Enable with `enableTorch*()` (or `enablePermissions*(['torch'])`), then control the light:
+Works on iPhone (iOS 17.4 or later) and Android Chrome. Requires HTTPS and works through a rear-camera stream. Enable with `enableTorch*()` (or `enablePermissions*(['torch'])`), then control the light:
 
 - `torchOn()`, `torchOff()`, `toggleTorch()`, `setTorch(enabled)` (async), `stopTorch()`, `isTorchSupported()`.
 - Flashlight aliases: `enableFlashlight*`, `flashlightOn()`, `flashlightOff()`, `toggleFlashlight()`, `setFlashlight()`, `stopFlashlight()`.
+- Runtime check: `isTorchSupported()` (or `window.torchSupported`) after enabling. It is `false` on phones with no rear flash, on iOS before 17.4, and on desktop. Use it to show a fallback, such as a bright screen.
 
 ```javascript
 function setup() {
@@ -583,6 +596,8 @@ Most useful for camera, NFC, BLE, and permission troubleshooting. Use sparingly 
 
 `showDesktopQr(options?)` shows a floating QR code of the current page on **desktop only** and does nothing on phones, so it can stay in a sketch: open the sketch on a laptop, scan, test on the phone. `setQrUrl(url)` points it elsewhere; `hideDesktopQr()` removes it. Options: `url`, `position` (`'top-right'` default / `'top-left'` / `'bottom-right'` / `'bottom-left'`), `size` (px, default 180), `label`, `closable`, `rememberDismiss`, `share` (after `shareSetup()` the QR carries the room join link; `false` opts out). The QR library loads from a CDN only when shown on desktop.
 
+In the p5.js Web Editor the QR encodes the sketch's Present link (`https://editor.p5js.org/<user>/full/<id>`), so the phone gets the last *saved* version: save before scanning. An unsaved sketch shows no QR. Don't guard the call with `location.protocol === 'https:'` or `window.self === window.top`: both are false in the Web Editor and hide the QR there.
+
 `window.isMobile` / `window.isDesktop` are booleans set when the library loads (user agent + touch + coarse-pointer checks, including iPadOS with a Mac user agent). Use them for desktop-only hints; gate hardware reads on the `*Enabled` flags, not on `isMobile`.
 
 ```javascript
@@ -603,7 +618,7 @@ function setup() {
 | Speech recognition | Web Speech API support varies | ✓ |
 | Camera | ✓ | ✓ |
 | Vibration | ✗ (API absent) | ✓ |
-| Torch / flashlight | ✗ | ✓ |
+| Torch / flashlight | ✓ (17.4+) | ✓ |
 | NFC | ✗ | ✓ (HTTPS) |
 | GPS / geolocation | ✓ (HTTPS, user gesture) | ✓ (HTTPS, user gesture) |
 | Bluetooth BLE | ✗ (use Bluefy app) | ✓ (HTTPS) |
@@ -616,12 +631,15 @@ All hardware requires a secure context (HTTPS or localhost).
 
 - **Permission never fires / `*Enabled` stays false** — the request must run inside a user gesture. Confirm you used an `enable*` activation UI and did not call it on load. On iOS a single gesture only grants one activation window, so combine features with one `enablePermissions*` call.
 - **ML5 throws about `_incrementPreload` / preload with p5@2.2.3** — add the preload-counter polyfill shim before loading ml5 (see Camera section).
-- **Torch or NFC does nothing** — both are Android-Chrome + HTTPS only; check `window.torchSupported` / `window.nfcStatus`.
+- **Torch does nothing** — check `isTorchSupported()` and `window.torchError`. The torch needs HTTPS and a phone with a rear flash. iPhones need iOS 17.4 or later.
+- **NFC does nothing** — NFC is Android Chrome + HTTPS only; check `window.nfcStatus`.
 - **GPS hangs on "Acquiring…" or times out** — cold start can take 5-30s, longer indoors; move outdoors, retry, and confirm OS-level Location Services is on. `window.geoStatus` tells you which state you're in.
 - **GPS denied even after tapping Allow** — the OS-level Location Services toggle (iOS Settings → Privacy & Security → Location Services; Android Settings → Location) must also be on; in-app browsers (Instagram/Facebook) usually fail — open in Safari/Chrome.
 - **BLE won't connect on iPhone** — Web Bluetooth is unavailable in iOS Safari/Chrome; use the Bluefy app.
 - **Share won't connect** — confirm `shareSetup({ host })` uses the deployed `*.workers.dev` URL (https), `wrangler deploy` succeeded, and the room name matches across devices.
 - **Touch callbacks never run** — `touchStarted/Moved/Ended` are no-ops in p5.js 2; switch to `mousePressed/mouseDragged/mouseReleased`.
+- **Tilt barely moves anything, or degree thresholds never trigger** — `rotationX/Y/Z` are in radians. Call `angleMode(DEGREES)` in `setup()`.
+- **`mouseIsPressed` is false while a finger is still down** — p5 sets it false when any one finger lifts. Test `touches.length > 0` instead.
 - **Mic example throws in preview** — don't call `p5.Amplitude.setInput(mic)` before `window.micEnabled`. `mic.getLevel is not a function` means p5.sound 0.3.x: use `mic.disconnect(); mic.connect(amplitude);` then `amplitude.getLevel()`.
 - **Screen dims or locks during a motion, audio, or GPS sketch** — only touches reset the auto-lock timer. Hold a Screen Wake Lock (see that section), requested from `mouseReleased()`.
 - **Mic level stays at 0** — check `window.micOpen`. `micEnabled` is `true` even when the microphone was denied or no input exists.
@@ -632,7 +650,7 @@ All hardware requires a secure context (HTTPS or localhost).
 - Distinguish sensors, mic, sound-only, speech, camera, vibration, torch, NFC, GPS, BLE, and Share permissions/connections.
 - Mention HTTPS requirements for mobile hardware.
 - Mention p5.js 2 event changes when touch callbacks are involved.
-- Flag browser/device limits clearly: torch and NFC are Android-Chrome-oriented; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support.
+- Flag browser/device limits clearly: NFC is Android Chrome only; vibration is unsupported on iOS; BLE needs Bluefy on iOS; speech recognition depends on Web Speech API support. The torch works on both iPhone (iOS 17.4+) and Android, with `isTorchSupported()` as the runtime check.
 - Point to the bundled examples under `examples/` when useful — feature folders include `movement/`, `microphone/`, `sound/`, `touch/`, `vibration/`, `camera/`, `torch/`, `nfc/`, `geo/`, `ble/`, `wakelock/`, and `combined/`, plus `ml5/`, `UIStyles/`, and `UXcompare/`.
 - When migrating examples to the p5 Web Editor, follow the web-editor batch-sync workflow in `docs/web-editor/` and record links in `webeditorLinks.md`.
 
@@ -645,6 +663,8 @@ Before finishing generated code, confirm:
 - Hardware data is read only after the matching `window.*Enabled` flag is true.
 - The HTML includes the needed dependencies and no unused heavy libraries.
 - p5.js 2-compatible `mouse*` callbacks are used (not p5 1.x touch callbacks).
+- Tilt sketches call `angleMode(DEGREES)` in `setup()` before using `rotationX/Y/Z` as degrees.
+- Multi-finger sketches test `touches.length`, not `mouseIsPressed`, for whether a finger is down.
 - Text and canvas output fit mobile screens.
 - Asset-dependent examples either include the assets or clearly document that the user must upload them.
 - ML5 camera examples include the p5 2 compatibility shim and use `PhoneCamera` mapping helpers.
