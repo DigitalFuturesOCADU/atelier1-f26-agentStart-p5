@@ -12,9 +12,14 @@ Load the p5-phone and p5js-2x skills.
 Read plan.md, and open each image it lists.
 
 ## While you work
-Change only sketch.js, and the Steps in plan.md.
+Change only sketch.js, the Steps in plan.md, and progress.md.
 Unless I ask for more, do one step, then stop.
 After each step, tell me what to check on my phone.
+
+## Coming back
+At the start, read progress.md if there is one.
+When I say "wrap up", rewrite progress.md: where things are,
+what works and how I checked it, what is next. Then stop.
 
 ## Leave these to me
 Do not commit. I commit.
