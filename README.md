@@ -106,7 +106,7 @@ In VS Code's Chat the same steps work. Choose **Plan**, then **Agent**, and type
 
 ## See it on your phone without pushing
 
-`npm run phone` opens a temporary HTTPS address for Live Server and prints a QR code. Tilt, shake and sound work on the phone, and every save shows up when you reload.
+`npm run phone` opens a temporary HTTPS address for this project and prints a QR code. Tilt, shake and sound work on the phone, and every save shows up when you reload.
 
 It needs two installs, once. There is nothing to install with npm.
 
@@ -115,9 +115,8 @@ It needs two installs, once. There is nothing to install with npm.
 
 Then, each time:
 
-1. Click **Go Live** in VS Code. Live Server runs on port 5500.
-2. Open a terminal in this folder (in VS Code or OpenCode) and run `npm run phone`.
-3. Scan the QR code. Press `Ctrl+C` to stop. The address changes next time.
+1. Open a terminal in this folder (in VS Code or OpenCode) and run `npm run phone`. If Live Server is running (**Go Live**, port 5500), it uses that. If not, it starts its own preview server for this folder.
+2. Scan the QR code. Save a change, then reload on the phone. Press `Ctrl+C` to stop. The address changes next time.
 
 Anyone with the address can open it while it runs. For anything you hand in or show, use Pages.
 

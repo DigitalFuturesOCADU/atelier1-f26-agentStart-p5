@@ -2,9 +2,12 @@
 /*
   npm run phone
 
-  Opens a temporary public HTTPS tunnel to Live Server (port 5500) and
-  prints the tunnel URL as a QR code, so a phone can open the project by
-  scanning it. Start Live Server first (Go Live in VS Code).
+  Opens a temporary public HTTPS tunnel to this project and prints the
+  tunnel URL as a QR code, so a phone can open the project by scanning it.
+
+  It checks for a preview server on port 5500 first. If Live Server (Go Live
+  in VS Code) is running, it uses that. If nothing answers, it starts its
+  own small server for this folder, and stops it again with Ctrl+C.
 
   Needs Node.js and cloudflared (see README.md). Another port:
     PORT=8080 npm run phone          (Mac)
@@ -16,10 +19,15 @@
 */
 
 import { spawn } from "node:child_process";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import http from "node:http";
+import path from "node:path";
 import readline from "node:readline";
+import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.PORT) || 5500; // Live Server's port
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // the project folder
 const LOCAL_URL = `http://localhost:${PORT}`;
 const TUNNEL_URL = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/;
 const QR_PACKAGE = "qrcode-terminal@0.12.0";
@@ -43,6 +51,7 @@ const TRANSIENT =
   /datagram handler|accept incoming stream|failed to serve tunnel connection|Serve tunnel error|Retrying connection|Connection terminated|shutting down control stream/;
 
 let tunnel = null;
+let server = null; // the built-in preview server, when this command started one
 let restarts = 0;
 let stopping = false;
 
@@ -50,17 +59,21 @@ log("");
 log("Phone preview");
 log(`Local site: ${LOCAL_URL}`);
 
+// Without a server behind it, the tunnel opens but the phone gets
+// "502 Bad Gateway". So check first, and start one if nothing answers.
 if (await localServerIsUp()) {
-  log("Preview server: running");
+  log("Preview server: already running (Live Server, or your own)");
 } else {
-  log(`Preview server: nothing is answering at ${LOCAL_URL}.`);
-  log("   Start Live Server (Go Live in VS Code), then reload on the phone.");
+  server = await startPreviewServer();
+  log(`Preview server: none was running, so this command started one for ${path.basename(ROOT)}.`);
+  log("   It stops with Ctrl+C. You do not need Go Live while this runs.");
 }
 
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
 process.on("exit", () => {
   if (tunnel && tunnel.exitCode === null) tunnel.kill();
+  if (server) server.close();
 });
 
 startTunnel();
@@ -178,6 +191,98 @@ function stop() {
   } else {
     process.exit(0);
   }
+}
+
+// A small static server for the project folder: no packages to install.
+// It never serves hidden files (.git, .agents, .env), since the tunnel is
+// public, and it answers byte ranges, which iPhones need for audio and video.
+function startPreviewServer() {
+  return new Promise((resolve) => {
+    const srv = http.createServer((req, res) => {
+      serveFile(req, res).catch(() => send(res, 500, "Server error"));
+    });
+    srv.on("error", (err) => {
+      log("");
+      if (err.code === "EADDRINUSE") {
+        log(`Port ${PORT} is busy, but nothing there answers as a web server.`);
+        log("Close what is using it, or choose another port (see the top of scripts/phone.mjs).");
+      } else {
+        log(`Could not start a preview server: ${err.message}`);
+      }
+      process.exit(1);
+    });
+    srv.listen(PORT, "127.0.0.1", () => resolve(srv));
+  });
+}
+
+const TYPES = {
+  ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8", ".md": "text/plain; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8", ".csv": "text/csv; charset=utf-8", ".svg": "image/svg+xml",
+  ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp",
+  ".ico": "image/x-icon", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".m4a": "audio/mp4",
+  ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime", ".woff": "font/woff", ".woff2": "font/woff2",
+  ".ttf": "font/ttf", ".otf": "font/otf", ".wasm": "application/wasm", ".glb": "model/gltf-binary",
+  ".gltf": "model/gltf+json", ".obj": "text/plain; charset=utf-8", ".vert": "text/plain; charset=utf-8",
+  ".frag": "text/plain; charset=utf-8",
+};
+
+async function serveFile(req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed");
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+  } catch {
+    return send(res, 400, "Bad request");
+  }
+  if (pathname.split("/").some((part) => part.startsWith("."))) return send(res, 404, "Not found");
+  let file = path.join(ROOT, pathname);
+  if (path.relative(ROOT, file).startsWith("..")) return send(res, 404, "Not found");
+
+  let info = await stat(file).catch(() => null);
+  if (info && info.isDirectory()) {
+    if (!pathname.endsWith("/")) {
+      res.writeHead(301, { Location: pathname + "/" });
+      return res.end();
+    }
+    file = path.join(file, "index.html");
+    info = await stat(file).catch(() => null);
+  }
+  if (!info || !info.isFile()) return send(res, 404, `Not found: ${pathname}`);
+
+  const headers = {
+    "Content-Type": TYPES[path.extname(file).toLowerCase()] || "application/octet-stream",
+    "Cache-Control": "no-store", // every reload on the phone gets your latest save
+    "Accept-Ranges": "bytes",
+  };
+  let start = 0;
+  let end = info.size - 1;
+  let status = 200;
+  const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || "");
+  if (range && info.size > 0) {
+    if (range[1] === "") {
+      start = Math.max(0, info.size - Number(range[2])); // the last N bytes
+    } else {
+      start = Number(range[1]);
+      if (range[2] !== "") end = Math.min(end, Number(range[2]));
+    }
+    if (start > end || start >= info.size) {
+      res.writeHead(416, { "Content-Range": `bytes */${info.size}` });
+      return res.end();
+    }
+    status = 206;
+    headers["Content-Range"] = `bytes ${start}-${end}/${info.size}`;
+  }
+  headers["Content-Length"] = info.size === 0 ? 0 : end - start + 1;
+  res.writeHead(status, headers);
+  if (req.method === "HEAD" || info.size === 0) return res.end();
+  createReadStream(file, { start, end }).pipe(res);
+}
+
+function send(res, status, text) {
+  if (res.headersSent) return res.end();
+  res.writeHead(status, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(text + "\n");
 }
 
 function localServerIsUp() {
